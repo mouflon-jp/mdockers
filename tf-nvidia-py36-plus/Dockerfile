@@ -64,17 +64,26 @@ RUN apt-get update && \
         apt-get update && \
         apt-get install libnvinfer4=4.1.2-1+cuda9.0
 
-ARG USE_PYTHON_3_NOT_2=True
-ARG _PY_SUFFIX=${USE_PYTHON_3_NOT_2:+3}
+
+ARG _PY_SUFFIX=3.6
 ARG PYTHON=python${_PY_SUFFIX}
 ARG PIP=pip${_PY_SUFFIX}
 
 # See http://bugs.python.org/issue19846
 ENV LANG C.UTF-8
 
-RUN apt-get update && apt-get install -y \
-    ${PYTHON} \
-    ${PYTHON}-pip
+RUN apt-get install -y --no-install-recommends \
+        curl \
+        git \
+        software-properties-common \
+        && \
+    add-apt-repository -y ppa:jonathonf/python-3.6 && \
+    apt-get update && \
+    apt-get install -y python3.6 python3.6-dev python3.6-venv && \
+    curl --output get-pip.py https://bootstrap.pypa.io/get-pip.py && \
+    python3.6 get-pip.py && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN ${PIP} install --upgrade \
     pip \
@@ -82,6 +91,14 @@ RUN ${PIP} install --upgrade \
 
 ARG TF_PACKAGE=tensorflow-gpu
 RUN ${PIP} install ${TF_PACKAGE}
+
+RUN ${PIP} install \
+    pandas \
+    matplotlib \
+    keras \
+    scikit-learn
+    
+RUN ${PIP} install git+https://github.com/mouflon-jp/mpy3lib.git
 
 COPY bashrc /etc/bash.bashrc
 RUN chmod a+rwx /etc/bash.bashrc
